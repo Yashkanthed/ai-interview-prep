@@ -16,12 +16,16 @@ const adminRoutes = require('./routes/adminRoutes');
 const app = express();
 
 // Connect to MongoDB
+// Connect to MongoDB
 connectDB();
+
+// Trust Render's proxy
+app.set('trust proxy', 1);
 
 // ── Core Middleware ────────────────────────────────────────────────────────────
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true   // allow cookies (refresh token)
+  credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
