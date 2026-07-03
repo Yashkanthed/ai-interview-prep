@@ -112,7 +112,10 @@ const sendPasswordResetOtp = async ({ to, name, otp }) => {
       ]
     });
 
-    console.log('✅ Reset OTP sent! Status:', result.response.status);
+    console.log("========== MAILJET RESPONSE ==========");
+console.log("HTTP Status:", result.response.status);
+console.log(JSON.stringify(result.body, null, 2));
+console.log("======================================");
     return result;
   } catch (err) {
     console.error('❌ Mailjet error:', err.statusCode, err.message);
