@@ -1,49 +1,23 @@
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 
-console.log('📧 Email Service Loading...');
-console.log('SMTP_HOST:', process.env.SMTP_HOST);
-console.log('SMTP_PORT:', process.env.SMTP_PORT);
-console.log('SMTP_USER:', process.env.SMTP_USER);
-console.log('SMTP_PASS exists:', !!process.env.SMTP_PASS);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  },
-  debug: true,
-  logger: true
-});
-
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ SMTP Verify Failed:', JSON.stringify(error));
-  } else {
-    console.log('✅ SMTP Ready to send emails');
-  }
-});
+console.log('📧 Email Service Loading — using Resend');
+console.log('RESEND_API_KEY exists:', !!process.env.RESEND_API_KEY);
 
 const sendVerificationOtp = async ({ to, name, otp }) => {
-  console.log('📤 Sending verification OTP...');
-  console.log('To:', to);
-  console.log('OTP:', otp);
+  console.log('📤 Sending verification OTP via Resend to:', to);
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
+  const { data, error } = await resend.emails.send({
+    from: 'AI Interview Prep <onboarding@resend.dev>',
     to,
-    subject: 'Your AI Interview Prep Verification Code',
+    subject: 'Your Verification Code — AI Interview Prep',
     html: `
       <div style="font-family:sans-serif;max-width:480px;margin:auto;
                   padding:32px;border:1px solid #e5e7eb;border-radius:12px;">
         <h2 style="color:#2563eb;">Verify Your Email</h2>
         <p>Hi <strong>${name}</strong>,</p>
-        <p>Your OTP code — expires in <strong>10 minutes</strong>.</p>
+        <p>Use this OTP to verify your account. Expires in <strong>10 minutes</strong>.</p>
         <div style="margin:28px 0;text-align:center;">
           <span style="
             display:inline-block;
@@ -62,26 +36,21 @@ const sendVerificationOtp = async ({ to, name, otp }) => {
         </p>
       </div>
     `
-  };
+  });
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ OTP email sent! Message ID:', info.messageId);
-    return info;
-  } catch (err) {
-    console.error('❌ OTP email FAILED!');
-    console.error('Error code:', err.code);
-    console.error('Error message:', err.message);
-    console.error('Full error:', JSON.stringify(err));
-    throw err;
+  if (error) {
+    console.error('❌ Resend error:', JSON.stringify(error));
+    throw new Error(error.message);
   }
+
+  console.log('✅ Verification OTP sent successfully! ID:', data.id);
 };
 
 const sendPasswordResetOtp = async ({ to, name, otp }) => {
-  console.log('📤 Sending reset OTP to:', to);
+  console.log('📤 Sending reset OTP via Resend to:', to);
 
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
+  const { data, error } = await resend.emails.send({
+    from: 'AI Interview Prep <onboarding@resend.dev>',
     to,
     subject: 'Your Password Reset Code — AI Interview Prep',
     html: `
@@ -89,7 +58,7 @@ const sendPasswordResetOtp = async ({ to, name, otp }) => {
                   padding:32px;border:1px solid #e5e7eb;border-radius:12px;">
         <h2 style="color:#dc2626;">Reset Your Password</h2>
         <p>Hi <strong>${name}</strong>,</p>
-        <p>Your OTP code — expires in <strong>15 minutes</strong>.</p>
+        <p>Use this OTP to reset your password. Expires in <strong>15 minutes</strong>.</p>
         <div style="margin:28px 0;text-align:center;">
           <span style="
             display:inline-block;
@@ -108,19 +77,14 @@ const sendPasswordResetOtp = async ({ to, name, otp }) => {
         </p>
       </div>
     `
-  };
+  });
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('✅ Reset OTP email sent! Message ID:', info.messageId);
-    return info;
-  } catch (err) {
-    console.error('❌ Reset OTP email FAILED!');
-    console.error('Error code:', err.code);
-    console.error('Error message:', err.message);
-    console.error('Full error:', JSON.stringify(err));
-    throw err;
+  if (error) {
+    console.error('❌ Resend error:', JSON.stringify(error));
+    throw new Error(error.message);
   }
+
+  console.log('✅ Reset OTP sent successfully! ID:', data.id);
 };
 
 module.exports = { sendVerificationOtp, sendPasswordResetOtp };
