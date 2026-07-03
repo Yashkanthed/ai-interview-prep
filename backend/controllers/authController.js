@@ -10,8 +10,8 @@ const {
 const { sendVerificationOtp, sendPasswordResetOtp } = require('../services/emailService');
 
 // Generate a 6-digit OTP
-const generateOtp = () => String(Math.floor(100000 + crypto.randomInt(900000)));
-
+const generateOtp = () =>
+  crypto.randomInt(100000, 1000000).toString();
 const safeUser = (user) => ({
   _id: user._id,
   name: user.name,
@@ -43,10 +43,15 @@ exports.register = asyncHandler(async (req, res) => {
   });
 
   try {
-    await sendVerificationOtp({ to: email, name, otp });
-  } catch (mailErr) {
-    console.error('OTP email failed:', mailErr.message);
-  }
+  await sendVerificationOtp({ to: email, name, otp });
+} catch (mailErr) {
+  console.error('OTP email failed:', mailErr.message);
+  // Delete the user since email failed
+  await User.findByIdAndDelete(user._id);
+  return res.status(500).json({
+    message: 'Could not send OTP email. Please check your email address and try again.'
+  });
+}
 
   res.status(201).json({
     message: 'Account created! Check your email for the 6-digit OTP.',
